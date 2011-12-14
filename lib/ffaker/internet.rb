@@ -1,3 +1,5 @@
+require 'uri'
+
 module Faker
   module Internet
     extend ModuleUtils
@@ -58,6 +60,52 @@ module Faker
       uri("http")
     end
 
+    def long_uri(protocol)
+      uri(protocol) + sometimes(path) + sometimes(anchor)
+    end
+
+    def exhaustive_uri(protocol)
+      uri(protocol) + sometimes(port) + sometimes(path) + sometimes(query) + sometimes(anchor)
+    end
+
+    def port
+      ":#{1 + rand(65535)}"
+    end
+
+    def path
+      (1..rand(3)).map { "/" + uri_chunk }.join + "/"
+    end
+
+    def query
+      "?" + (1..rand(5)).map{ "#{query_key}=#{uri_chunk}" }.join('&') + sometimes("&")
+    end
+
+    def query_key
+      max = rand(3)
+      (0..max).map do |depth|
+        if depth == 0
+          uri_chunk
+        elsif depth < max
+          "[#{uri_chunk}]"
+        else
+          [ "[]", "[#{uri_chunk}]" ].sample # Last item is either [foo] or []
+        end
+      end.join
+    end
+
+    def anchor
+      "#" + uri_chunk_options.random_pick(1 + rand(2)).join(URI_ANCHOR_SEPARATORS.rand)
+    end
+
+    def uri_chunk
+      uri_chunk_options.random_pick(1 + rand(3)).join(URI_CHUNK_SEPARATORS.rand)
+    end
+
+    def uri_chunk_options
+      self.k [(1 + rand(1000)).to_s, uri_escape(HipsterIpsum.word), uri_escape(Lorem.word),
+              uri_escape(NameDE.last_name), uri_escape(Address.uk_county)]
+    end
+
     def ip_v4_address
       (1..4).map { BYTE.random_pick(1) }.join(".")
     end
@@ -66,5 +114,18 @@ module Faker
     HOSTS = k %w(gmail.com yahoo.com hotmail.com)
     DISPOSABLE_HOSTS = k %w(mailinator.com suremail.info spamherelots.com binkmail.com safetymail.info)
     DOMAIN_SUFFIXES = k %w(co.uk com us uk ca biz info name)
+    URI_CHUNK_SEPARATORS = k ['', '-', '_']
+    URI_ANCHOR_SEPARATORS = k ['', '-', '_', '/']
+
+    protected
+
+      def sometimes(str)
+        ["", str].sample
+      end
+      
+      def uri_escape(value)
+        ::URI.escape(value, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
+      end
+
   end
 end

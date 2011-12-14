@@ -1,4 +1,5 @@
 require 'helper'
+require 'uri'
 
 class TestFakerInternet < Test::Unit::TestCase
   def setup
@@ -53,6 +54,11 @@ class TestFakerInternet < Test::Unit::TestCase
 
   def test_ip_v4_address
     assert @tester.ip_v4_address.match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)
+  end
+
+  def test_exhaustive_uri
+    assert @tester.exhaustive_uri('http').match(URI::regexp('http'))
+    assert @tester.exhaustive_uri('https').match(URI::regexp('https'))
   end
 
 end
